@@ -12,6 +12,7 @@ uint8_t translateMod(String mod);
 void setScreenResolution(String msg);
 void mouseControl(String msg);
 void parseCommand(String msg);
+void repeatPrevious(String msg);
 
 // Create classes used for SdFat
 SdFatSdioEX sd;
