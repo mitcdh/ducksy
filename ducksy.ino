@@ -12,16 +12,15 @@ uint8_t translateMod(String mod);
 void setScreenResolution(String msg);
 void mouseControl(String msg);
 void parseCommand(String msg);
-void repeatPrevious(String msg);
 
 // Create classes used for SdFat
 SdFatSdioEX sd;
 File payload, dropfile;
 
 // Global variables that can be changed before compile/upload
-uint8_t _parse_delay = 200;
-uint8_t _resolution_x = 1920;
-uint8_t _resolution_y = 1080;
+int _parse_delay = 200;
+int _resolution_x = 1920;
+int _resolution_y = 1080;
 char _payload_file[] = "payload.txt";
 const size_t _line_buf = 2048;
 
@@ -43,6 +42,9 @@ void setup()
 
   // Delay for HID to register on host
   delay(2000);
+
+  //Initalise default screen size
+  Mouse.screenSize(_resolution_x, _resolution_y);
 
   // Connect to SD card
   if (!sd.begin())
@@ -226,14 +228,9 @@ uint8_t translateMod(String mod)
 // Command Format: RESOLUTION [X] [Y]
 void setScreenResolution(String msg)
 {
-  String x_str = getInstruction(msg, 2), y_str = getInstruction(msg, 3);
-  int8_t x = x_str.toInt(), y = y_str.toInt();
-  if(x != 0 || y != 0)
-  {
-    _resolution_x = x;
-    _resolution_x = y;
-    Mouse.screenSize(_resolution_x, _resolution_y);
-  }
+  String x_str = getInstruction(msg, 1), y_str = getInstruction(msg, 2);
+  _resolution_x = x_str.toInt(), _resolution_y = y_str.toInt();
+  Mouse.screenSize(_resolution_x, _resolution_y);
 }
 
 // Types out contents of a file over HID keyboard input
@@ -283,17 +280,14 @@ void mouseControl(String msg)
   else if(instruction == "MOVE" || instruction == "MOVETO")
   {
     String x_str = getInstruction(msg, 2), y_str = getInstruction(msg, 3);
-    int8_t x = x_str.toInt(), y = y_str.toInt();
-    if(x != 0 || y != 0)
+    int x = x_str.toInt(), y = y_str.toInt();
+    if(instruction == "MOVE")
     {
-      if(instruction == "MOVE")
-      {
-        Mouse.move(x,y);
-      }
-      else
-      {
-        Mouse.moveTo(x,y);
-      }
+      Mouse.move(x,y);
+    }
+    else
+    {
+      Mouse.moveTo(x,y);
     }
   }
   // 'TOGGLE' presses the mouse button without release
@@ -311,10 +305,10 @@ void mouseControl(String msg)
 // Repeat the previous command
 void repeatPrevious(String msg)
 {
-  int8_t occurances = getInstruction(msg, 1).toInt();
+  int occurances = getInstruction(msg, 1).toInt();
   if(getInstruction(_previous_msg, 0) != "REPEAT")
   {
-    for(int8_t i = 0; i < occurances; ++i)
+    for(size_t i = 0; i < occurances; ++i)
     {
       parseCommand(_previous_msg);
     }
